@@ -785,5 +785,5 @@ function gameOver() {
 }
 
 function removeEmitter(emitter) {
-    emitter.kill();
+    emitter.destroy();
 } 
