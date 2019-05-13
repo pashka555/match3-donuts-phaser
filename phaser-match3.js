@@ -2,6 +2,8 @@
 
 var game = new Phaser.Game(1280,960, Phaser.CANVAS, 'test', {preload : loadResources, create: onCreate })
 
+//game.stage.scaleMode = Phaser.StageScaleMode.SHOW_ALL; 
+
 var DONUTTypes = [{color:1, type:0, img:'donut-01'},
                 {color:2, type:0, img:"donut-02"},
                 {color:3, type:0, img:"donut-03"},
@@ -46,7 +48,17 @@ var style = {font: "40px FredokaOne", fill: "#eeeeee"};
 score_var.value=0;
 var timer;
 
+var bgm;
+
+var killSound;
+
 //var emitter;
+
+document.fonts.ready.then(function () {
+    //alert('All fonts in use by visible text have loaded.');
+    // alert('Fredoka loaded? ' + document.fonts.check('FredokaOne'));  // true
+    style = {font: "40px FredokaOne", fill: "#eeeeee"};
+});
 
 function loadResources() {
     game.load.image('background', 'images/backgrounds/background.jpg')
@@ -74,11 +86,17 @@ function loadResources() {
 
     game.load.image('scoreboard','images/bg-score.png');
 
-    game.load.image('timeup','images/text-timeup.png')
+    game.load.image('timeup','images/text-timeup.png');
 
-    game.load.image("tray",'images/back_tray.png')
+    game.load.image("tray",'images/back_tray.png');
 
-   
+    game.load.image('smallshadow','images/game/shadow.png');
+
+    game.load.audio('bgm', 'audio/background.mp3');
+    game.load.audio('kill', 'audio/kill.mp3');
+    game.load.audio('select', ['audio/select-1.mp3','audio/select-2.mp3','audio/select-3.mp3','audio/select-4.mp3','audio/select-5.mp3','audio/select-6.mp3',
+    'audio/select-7.mp3','audio/select-8.mp3','audio/select-9.mp3']);
+    //game.load.audio('', ['audio/bodenstaendig_2000_in_rock_4bit.mp3']);
 } //should load resources
 
 function onCreate() {
@@ -90,8 +108,21 @@ function onCreate() {
 
     game.world.backgroundcolor = "#FFFFFF"
 
-   
+    killSound = game.add.audio('kill');
 
+    var w = window,
+    d = document,
+    e = d.documentElement,
+    g = d.getElementsByTagName('body')[0],
+    x = w.innerWidth || e.clientWidth || g.clientWidth,
+    y = w.innerHeight|| e.clientHeight|| g.clientHeight;
+    alert(x + ' × ' + y);
+
+    //game.world.scale.x = x/1280;
+    //game.world.scale.y = y/960;
+    //game.stage.scale.startFullScreen();
+
+    //game.stage.scaleMode = Phaser.StageScaleMode.SHOW_ALL; 
 
 //    game.physics.arcade.gravity.y = 600;
 
@@ -105,10 +136,7 @@ function toMenu() {
     unloadGame();
     this.bg = this.game.add.tileSprite(0, 0, game.world.width, game.cache.getImage('background').height, 'background');
 
-
-    //var style = {font: "55px FredokaOne", fill: "#eeeeee"};
-    //this.game.add.text(0,0,"My Custom Font Works", style);
-
+    var bgm = 
 
     logo = game.add.sprite(game.world.centerX, -500, 'donuts!logo');
 
@@ -118,6 +146,7 @@ function toMenu() {
 
     logotween = game.add.tween(logo);
 
+    bgm = game.sound.play('bgm');
 
     logotween.to({y:game.world.centerY},1000,'Linear',true,0);
 
@@ -129,9 +158,13 @@ function toMenu() {
 } //should draw menu. TODO
 
 function dropBigDonut() {
-    bigDonut = game.add.sprite(game.world.centerX-455,-500,'big-donut');
+
+
+    bigDonut = game.add.sprite(game.world.centerX-455,-500,'big-donut-shadow');
 
     bigDonut.scale.setTo(0.35,0.35);
+
+    bigDonut.addChild(game.add.sprite(0,0,"big-donut"));
 
     bdtween = game.add.tween(bigDonut);
 
@@ -150,6 +183,8 @@ function unloadMenu() {
         bigDonut.kill();
         
     } else game.time.events.add(1000,unloadMenu,this);
+
+    game.sound.stopAll();
     //bdShadow.kill();
 }
 
@@ -226,12 +261,18 @@ function spawnBoard() {
         {
             var type = selectRandomType();
             
-            var donut = donuts.create(i * DONUT_SIZE_SPACED, j * DONUT_SIZE_SPACED, type.img);
+            var donut = donuts.create(i * DONUT_SIZE_SPACED, j * DONUT_SIZE_SPACED, "smallshadow");
             donut.donutType = type;
             donut.name = 'donut' + i.toString() + 'x' + j.toString();
             donut.inputEnabled = true;
             donut.events.onInputDown.add(selectDonut, this);
             donut.events.onInputUp.add(releaseDonut, this);
+            donut.addChild(game.add.sprite(0,0,type.img));
+            donut.children[0]
+            donut.children[0].anchor.x = +0.12;
+            donut.children[0].anchor.y = +0.12;
+            donut.children[0].sendToBack();
+            donut.bringToTop();
             //temp_emitter = game.add.emitter(0, 0, 10);
             //temp_emitter.makeParticles(['particle-1','particle-2','particle-3','particle-4','particle-5','particle-ex1','particle-ex2','particle-ex3']);
             //temp_emitter.position.x = donut.world.x;
@@ -267,6 +308,7 @@ function selectDonut(donut) {
 
     if (allowInput)
     {
+        game.sound.play('select');
         selectedDonut = donut;
         selectedDonutStartPos.x = donut.posX;
         selectedDonutStartPos.y = donut.posY;
@@ -310,13 +352,15 @@ function calcDonutId(posX, posY) {
 
 function tweenDonutPos(donut, newPosX, newPosY, durationMultiplier) {
 
-    console.log('Tween ',donut.name,' from ',donut.posX, ',', donut.posY, ' to ', newPosX, ',', newPosY);
+    //console.log('Tween ',donut.name,' from ',donut.posX, ',', donut.posY, ' to ', newPosX, ',', newPosY);
     if (durationMultiplier === null || typeof durationMultiplier === 'undefined')
     {
         durationMultiplier = 1;
     }
 
+    //game.add.tween(donut.children[0]).to({x: newPosX  * DONUT_SIZE_SPACED, y: newPosY * DONUT_SIZE_SPACED}, 100 * durationMultiplier, Phaser.Easing.Linear.None, true);
     return game.add.tween(donut).to({x: newPosX  * DONUT_SIZE_SPACED, y: newPosY * DONUT_SIZE_SPACED}, 100 * durationMultiplier, Phaser.Easing.Linear.None, true);
+    
 }//animated donut movement? 
 
 // find a donut on the board according to its position on the board
@@ -382,12 +426,14 @@ function checkAndKillDonutMatches(donut) {
 
     if (countVert >= MATCH_MIN)
     {
+        killSound.play();
         killDonutRange(donut.posX, donut.posY - countUp, donut.posX, donut.posY + countDown);
         canKill = true;
     }
 
     if (countHoriz >= MATCH_MIN)
     {
+        killSound.play();
         killDonutRange(donut.posX - countLeft, donut.posY, donut.posX + countRight, donut.posY);
         canKill = true;
     }
@@ -442,7 +488,7 @@ function refillBoard() {
                 donut.dirty = true;
                 var type = selectRandomType();
                 donut.donutType = type;
-                donut.loadTexture(donut.donutType.img);
+                donut.children[0].loadTexture(donut.donutType.img);
 
                 //randomizeDonutColor(donut);
                 setDonutPos(donut, i, j);
@@ -513,8 +559,8 @@ function slideDonut(pointer, x, y) {
 
     if (selectedDonut && pointer.isDown)
     {
-        var cursorDonutPosX = getDonutPos(x-DONUT_SPACE_LEFT_MARGIN);
-        var cursorDonutPosY = getDonutPos(y-DONUT_SPACE_TOP_MARGIN);
+        var cursorDonutPosX = getDonutPos((x-DONUT_SPACE_LEFT_MARGIN));///game.world.scale.x);
+        var cursorDonutPosY = getDonutPos((y-DONUT_SPACE_TOP_MARGIN));///game.world.scale.y);
 
         if (checkIfDonutCanBeMovedHere(selectedDonutStartPos.x, selectedDonutStartPos.y, cursorDonutPosX, cursorDonutPosY))
         {
@@ -680,6 +726,22 @@ function updateScoreBoard() {
     if(typeof score_text != 'undefined') score_text.text = '' + score_var.score;
     //score.text
 }
+
+function resizeGame() {
+game.width = width;
+game.height = height;
+game.stage.width = width;
+game.stage.height = height;
+if (game.renderType === Phaser.WEBGL) {    
+    game.renderer.resize(width, height);
+}
+game.world.setBounds(0, 0, width, height);
+game.camera.setSize(width, height);
+game.camera.setBoundsToWorld();
+game.scale.setShowAll();
+game.scale.refresh();
+}
+
 
 function gameOver() {
     allowInput = false;
