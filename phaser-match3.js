@@ -107,7 +107,7 @@ function loadResources() {
 } //should load resources
 
 function onCreate() {
-    //game.physics.startSystem(Phaser.Physics.ARCADE);
+    game.physics.startSystem(Phaser.Physics.ARCADE);
 
     //emitter = game.add.emitter(0, 0, 10);
 
@@ -169,14 +169,14 @@ function toMenu() {
     startGameButton = game.add.button(game.world.centerX, game.world.centerY * 1.45 , 'button', toGame, this, 2,1,0);
     startGameButton.anchor.x=0.5;
     startGameButton.anchor.y=0.5;
-} //should draw menu. TODO
+} //should draw menu.
 
 function dropBigDonut() {
 
     bdtween = game.add.tween(bigDonut);
 
     bdtween.to({y:game.world.centerX*0.45},1000,'Linear',true,0);
-}
+} //animation for donut to arrive after the logo
 
 function unloadMenu() {
     if(typeof startGameButton !== 'undefined') {
@@ -293,10 +293,9 @@ function spawnBoard() {
             donut.children[0].anchor.y = +0.12;
             donut.children[0].sendToBack();
             donut.bringToTop();
-            //temp_emitter = game.add.emitter(0, 0, 10);
-            //temp_emitter.makeParticles(['particle-1','particle-2','particle-3','particle-4','particle-5','particle-ex1','particle-ex2','particle-ex3']);
-            //temp_emitter.position.x = donut.world.x;
-            //temp_emitter.position.y = donut.world.y;
+            
+            //temp_emitter.anchor.x = 0.5;
+            //temp_emitter.anchor.y = 0.5;
             //donut.addChild(temp_emitter);
             //randomizeDonutColor(donut);
             setDonutPos(donut, i, j); // each donut has a position on the board
@@ -567,6 +566,11 @@ function killDonutRange(fromX, fromY, toX, toY) {
         for (var j = fromY; j <= toY; j++)
         {
             var donut = getDonut(i, j);
+            var temp_emitter = game.add.emitter(donut.centerX+DONUT_SPACE_LEFT_MARGIN,donut.centerY+DONUT_SPACE_TOP_MARGIN, 10);
+            temp_emitter.lifespan = 500;
+            temp_emitter.makeParticles(['particle-1','particle-2','particle-3','particle-4','particle-5','particle-ex1','particle-ex2','particle-ex3']);
+            temp_emitter.start(true,500,null,4);
+            game.time.events.add(2000,removeEmitter,this,temp_emitter);
             donut.kill();
         }
     }
@@ -625,6 +629,8 @@ function removeKilledDonuts() {
         if (!donut.alive) {
             addedScore += 100;
             score_var.score += addedScore;
+            
+            //donut.children[1].start(true,500,null,10);
             //donut.children[0].centerX = donut.world.x;
             //donut.children[0].centerY = donut.world.y;
             //donut.children[0].start(true,4000,null,10);
@@ -777,3 +783,7 @@ function gameOver() {
 
     game.time.events.add(5000,toMenu,this);
 }
+
+function removeEmitter(emitter) {
+    emitter.kill();
+} 
