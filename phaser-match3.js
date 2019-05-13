@@ -110,16 +110,17 @@ function onCreate() {
 
     killSound = game.add.audio('kill');
 
-    //var w = window,
-    //d = document,
-    //e = d.documentElement,
-    //g = d.getElementsByTagName('body')[0],
-    //x = w.innerWidth || e.clientWidth || g.clientWidth,
-    //y = w.innerHeight|| e.clientHeight|| g.clientHeight;
-    //alert(x + ' × ' + y);
+    var w = window,
+    d = document,
+    e = d.documentElement,
+    g = d.getElementsByTagName('body')[0],
+    x = w.innerWidth || e.clientWidth || g.clientWidth,
+    y = w.innerHeight|| e.clientHeight|| g.clientHeight;
+    alert(x + ' × ' + y);
 
-    //game.world.scale.x = x/1280;
-    //game.world.scale.y = y/960;
+    toScale = Math.min(x/1280,y/960);
+    game.world.scale.x = toScale;
+    game.world.scale.y = toScale;
     //game.stage.scale.startFullScreen();
 
     //game.stage.scaleMode = Phaser.StageScaleMode.SHOW_ALL; 
@@ -559,8 +560,8 @@ function slideDonut(pointer, x, y) {
 
     if (selectedDonut && pointer.isDown)
     {
-        var cursorDonutPosX = getDonutPos((x-DONUT_SPACE_LEFT_MARGIN));///game.world.scale.x);
-        var cursorDonutPosY = getDonutPos((y-DONUT_SPACE_TOP_MARGIN));///game.world.scale.y);
+        var cursorDonutPosX = getDonutPos((x/game.world.scale.x)-DONUT_SPACE_LEFT_MARGIN);///game.world.scale.x);
+        var cursorDonutPosY = getDonutPos((y/game.world.scale.y)-DONUT_SPACE_TOP_MARGIN);///game.world.scale.y);
 
         if (checkIfDonutCanBeMovedHere(selectedDonutStartPos.x, selectedDonutStartPos.y, cursorDonutPosX, cursorDonutPosY))
         {
