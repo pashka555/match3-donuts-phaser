@@ -45,12 +45,17 @@ var score_var = {
 
 var style = {font: "40px FredokaOne", fill: "#eeeeee"};
 
+var style2 = {font: "100px FredokaOne", fill: "#333333"};
+
+
 score_var.value=0;
 var timer;
 
 var bgm;
 
 var killSound;
+
+var clockText;
 
 //var emitter;
 
@@ -92,6 +97,8 @@ function loadResources() {
 
     game.load.image('smallshadow','images/game/shadow.png');
 
+    game.load.image('clock','images/clock.png');
+
     game.load.audio('bgm', 'audio/background.mp3');
     game.load.audio('kill', 'audio/kill.mp3');
     game.load.audio('select', ['audio/select-1.mp3','audio/select-2.mp3','audio/select-3.mp3','audio/select-4.mp3','audio/select-5.mp3','audio/select-6.mp3',
@@ -116,7 +123,7 @@ function onCreate() {
     g = d.getElementsByTagName('body')[0],
     x = w.innerWidth || e.clientWidth || g.clientWidth,
     y = w.innerHeight|| e.clientHeight|| g.clientHeight;
-    alert(x + ' × ' + y);
+    //alert(x + ' × ' + y);
 
     toScale = Math.min(x/1280,y/960);
     game.world.scale.x = toScale;
@@ -153,19 +160,18 @@ function toMenu() {
 
     game.time.events.add(500, dropBigDonut);
 
+    bigDonut = game.add.sprite(game.world.centerX-455,-500,'big-donut-shadow');
+
+    bigDonut.scale.setTo(0.35,0.35);
+
+    bigDonut.addChild(game.add.sprite(0,0,"big-donut"));
+
     startGameButton = game.add.button(game.world.centerX, game.world.centerY * 1.45 , 'button', toGame, this, 2,1,0);
     startGameButton.anchor.x=0.5;
     startGameButton.anchor.y=0.5;
 } //should draw menu. TODO
 
 function dropBigDonut() {
-
-
-    bigDonut = game.add.sprite(game.world.centerX-455,-500,'big-donut-shadow');
-
-    bigDonut.scale.setTo(0.35,0.35);
-
-    bigDonut.addChild(game.add.sprite(0,0,"big-donut"));
 
     bdtween = game.add.tween(bigDonut);
 
@@ -216,6 +222,19 @@ function toGame() {
     score_text.anchor.y=0.75;
     game.world.bringToTop(score_text);
     score_board.addChild(score_text);
+
+    clock = this.game.add.sprite(game.world.centerX*1.5,game.world.centerY*0.25,"clock");
+    clock.scale.x = 0.25;
+    clock.scale.y = 0.25;
+    clock.anchor.x = 0.5;
+    clock.anchor.y = 0.75;
+    clockText = this.game.add.text(0,0,"00",style2);
+    clockText.scale.x = 4;
+    clockText.scale.y = 4;
+    clockText.anchor.x = 0;
+    clockText.anchor.y = 0.75;
+
+    clock.addChild(clockText);
 
     game.time.events.add(1000, this.timerTick, this);
     //game.world.bringToTop(emitter);
@@ -718,6 +737,7 @@ function timerTick() {
         gameOver();
     }
     else { timer -= 1;
+    clockText.text = '' + timer;
     game.time.events.add(1000,timerTick,this);
     }
 }
